@@ -31,4 +31,8 @@ $api->version('v1', [
 		$api->get('goods/show/{id}','ProductController@show');
 		$api->post('good/price','ProductController@show');
 
+		$api->post('good/info','ProductController@info');
+
+		$api->resource('order',' OrderController');
+
 });

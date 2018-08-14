@@ -33,7 +33,16 @@ class HomeController extends Controller
         $attributes['weixin_session_key'] = $data['session_key'];
         $user->update($attributes);
     	$token = auth('api')->fromUser($user);
-        return $this->respondWithToken($token)->setStatusCode(201);
+        if (!empty($user->nickname)) {
+            return $this->response->array([
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => \Auth::guard('api')->factory()->getTTL() * 60,
+            'user_info' =>collect($user)->except(['weixin_openid', 'weixin_session_key', 'session_id'])->all()
+            ]);
+        }else{
+            return $this->respondWithToken($token)->setStatusCode(201);
+        }
     	   
     }
 

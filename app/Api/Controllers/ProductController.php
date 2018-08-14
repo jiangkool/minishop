@@ -6,14 +6,16 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Dingo\Api\Routing\Helpers;
 use App\Models\Product;
+use App\Models\ProductItem;
 use App\Transformers\ProductShowTransformer;
+use App\Transformers\ProductItemTransformer;
 
 class ProductController extends Controller
 {
     use Helpers;
 
     public function __construct(){
-    	$this->middleware(['auth:api'])->except('show');
+    	$this->middleware(['auth:api'])->except('show','info');
     }
 
     public function show($id)
@@ -21,8 +23,8 @@ class ProductController extends Controller
     	return $this->response->item(Product::find($id),new ProductShowTransformer)->setStatusCode(201);
     }
 
-    public function price(Request $request)
+    public function info(Request $request)
     {
-    	
+    	return $this->response->item(ProductItem::where('product_id',$request->goodsId)->where('id',$request->propertyChildId)->first(), new ProductItemTransformer)->setStatusCode(201);
     }
 }
