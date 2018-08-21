@@ -14,7 +14,8 @@
         "laravel/framework": "5.6.*",
         "laravel/tinker": "^1.0",
         "overtrue/laravel-wechat": "~4.0",
-        "tymon/jwt-auth": "1.0.*@dev"
+        "tymon/jwt-auth": "1.0.*@dev",
+        "yansongda/laravel-pay": "^2.0"
     },
     "require-dev": {
         "filp/whoops": "^2.0",

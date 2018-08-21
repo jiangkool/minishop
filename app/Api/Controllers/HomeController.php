@@ -19,7 +19,7 @@ class HomeController extends Controller
 	use Helpers;
 
     public function __construct(){
-    	$this->middleware(['auth:api'])->except('login','shopName','banner','category','goodsList');
+    	$this->middleware(['token'])->except('login','shopName','banner','category','goodsList');
     }
 
     public function login(MiniappRequest $request)
@@ -33,16 +33,14 @@ class HomeController extends Controller
         $attributes['weixin_session_key'] = $data['session_key'];
         $user->update($attributes);
     	$token = auth('api')->fromUser($user);
-        if (!empty($user->nickname)) {
+        
             return $this->response->array([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'expires_in' => \Auth::guard('api')->factory()->getTTL() * 60,
             'user_info' =>collect($user)->except(['weixin_openid', 'weixin_session_key', 'session_id'])->all()
             ]);
-        }else{
-            return $this->respondWithToken($token)->setStatusCode(201);
-        }
+
     	   
     }
 
@@ -75,5 +73,7 @@ class HomeController extends Controller
     {
         return $this->response->collection(Product::active()->get(),new ProductTransformer)->setStatusCode(201);
     }
+
+
 
 }

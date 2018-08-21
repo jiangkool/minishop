@@ -12,6 +12,7 @@ class OrderItem extends Model
 		'product_id',
 		'title',
 		'norm',
+		'pic',
 		'num',
 		'pre_price',
 		'total_price',

@@ -15,7 +15,7 @@ class ProductController extends Controller
     use Helpers;
 
     public function __construct(){
-    	$this->middleware(['auth:api'])->except('show','info');
+    	$this->middleware(['token'])->except('show','info');
     }
 
     public function show($id)
