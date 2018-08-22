@@ -10,8 +10,10 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Coupon;
+use App\Models\Payment;
 use App\Http\Requests\OrderStoreRequest;
 use Pay;
+use Illuminate\Support\Facades\Redis;
 
 class OrderController extends Controller
 {
@@ -39,14 +41,18 @@ class OrderController extends Controller
             $rorder_data['address']=$request->province_str.$request->city_str.($request->district_str?:'').$request->address;
             $rorder_data['tradetotal']=$total;
             $rorder_data['preferentialtotal']=isset($request->couponId)?Coupon::find($request->couponId)->par_value:0;
+            if (isset($request->couponId)) {
+                Coupon::where('id',$request->couponId)->update(['status'=>0]);
+
+            }
             $rorder_data['total']=$total-$rorder_data['preferentialtotal'];
             $rorder_data['out_trade_no']=date('Ymd',time()).time().mt_rand(0,10);
             $order=Order::create($rorder_data);
-
+            Redis::set("user:{$rorder_data['user_id']}:{$order->id}:total",$rorder_data['total']);
             $orderItem['order_id']=$order->id;
             $orderItem['user_id']=$rorder_data['user_id'];
             foreach ($items as $item) {
-                
+
                 \DB::transaction(function () use ($item,$orderItem) {
                     $good=Product::find($item['goodsId']);
                     $pitem=ProductItem::where('id',$item['propertyChildId'])->lockForUpdate()->first();
@@ -71,8 +77,6 @@ class OrderController extends Controller
 
     public function orderStatus()
     {
-    	//count_id_no_pay count_id_no_transfer count_id_no_confirm count_id_no_reputation count_id_success
-        //订单状态 0=待付,1=待发货,2=待收获,3=待评价,4=已完成
        $user_id=auth('api')->user()->id;
        $data['count_id_no_pay']=Order::where('user_id',$user_id)->where('status',0)->count();
        $data['count_id_no_transfer']=Order::where('user_id',$user_id)->where('status',1)->count();
@@ -88,9 +92,14 @@ class OrderController extends Controller
     {
         $status=$request->status;
         $user_id=auth('api')->user()->id;
+        $data['count_id_no_pay']=Order::where('user_id',$user_id)->where('status',0)->count();
+        $data['count_id_no_transfer']=Order::where('user_id',$user_id)->where('status',1)->count();
+        $data['count_id_no_confirm']=Order::where('user_id',$user_id)->where('status',2)->count();
+        $data['count_id_no_reputation']=Order::where('user_id',$user_id)->where('status',3)->count();
+        $data['count_id_success']=Order::where('user_id',$user_id)->where('status',4)->count();
         $data['orderList']=Order::where('user_id',$user_id)->where('status',$status)->with('orderItems')->orderBy('created_at','desc')->get();
-        $data['code']=201;
-        return $this->response->array($data);
+        //$data['code']=201;
+        return $this->response->array($data)->setStatusCode(201);
 
     }
 
@@ -106,6 +115,7 @@ class OrderController extends Controller
     {
         $data=$request->all();
         $orderItem=Order::find($data['nextAction']['id']);
+        $uid=auth('api')->user()->id;
         $order = [
             'out_trade_no' => $orderItem->out_trade_no,
             'body' => $data['remark'],
@@ -113,9 +123,20 @@ class OrderController extends Controller
             'openid' => 'onkVf1FjWS5SBIixxxxxxxxx',
         ];
 
-        $result = Pay::wechat()->mp($order);
-
-        return $result;
+       // $result = Pay::wechat()->miniapp($order);
+        // Redis::set('a','124');
+        if (1) {
+            $total=Redis::get("user:{$uid}:{$data['nextAction']['id']}:total");
+            $data2['user_id']=$uid;
+            $data2['paiedtotal']=$total;
+            $data2['status']=1;
+            $data2['type']=0;
+            if(Payment::create($data2)){
+                $arr['code']=201;
+                $orderItem->update(['status'=>1]);
+            }
+        }
+        return $this->response->array($arr);
     }
 
 }

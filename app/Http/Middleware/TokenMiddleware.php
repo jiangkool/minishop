@@ -30,21 +30,22 @@ class TokenMiddleware extends BaseMiddleware
 
             //刷新 token
             try {
-                $refreshed=\JWTAuth::parseToken()->refresh();
-
+                 $token = auth('api')->refresh();
+                 $user = auth('api')->setToken($token)->User();
+                 
             } catch (JWTException $e) {
-                //dd($e->getMessage());
-                return response()->json(['msg'=>'Refresh Token Failed!','code'=>402]);
+
+                return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
             }
             
         } catch(JWTException $e){
 
-            return response()->json(['msg'=>'Token Error!','code'=>402]);
+            return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
         }
-       
+
         $response = $next($request);
 
-        //返回新 token
+        //返回 token
         return $this->setAuthenticationHeader($response, $token);
     }
 
