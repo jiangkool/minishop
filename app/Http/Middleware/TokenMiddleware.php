@@ -30,19 +30,26 @@ class TokenMiddleware extends BaseMiddleware
 
             //刷新 token
             try {
-                 $token = auth('api')->refresh();
-                 $user = auth('api')->setToken($token)->User();
-                 
-            } catch (JWTException $e) {
 
-                return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
+                 $newToken = auth('api')->refresh();
+                 $user = auth('api')->setToken($newToken)->User();
+                 \Redis::setex('blacklist:'.$token,60,$newToken);
+
+            } catch (JWTException $e) {
+                //如果 token 多次请求更新 找到记录后直接放行
+                if ($newToken=\Redis::get('blacklist:'.$token)){
+                    auth('api')->setToken($newToken)->User();
+                }else{
+                    return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
+                }
             }
             
         } catch(JWTException $e){
 
-            return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
+                return response()->json(['msg'=>$e->getMessage()])->setStatusCode(402);
+            
         }
-
+        $token=isset($newToken)?$newToken:$token;
         $response = $next($request);
 
         //返回 token

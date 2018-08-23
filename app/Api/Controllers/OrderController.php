@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Coupon;
+use App\Models\UserCoupon;
 use App\Models\Payment;
 use App\Http\Requests\OrderStoreRequest;
 use Pay;
@@ -42,7 +43,7 @@ class OrderController extends Controller
             $rorder_data['tradetotal']=$total;
             $rorder_data['preferentialtotal']=isset($request->couponId)?Coupon::find($request->couponId)->par_value:0;
             if (isset($request->couponId)) {
-                Coupon::where('id',$request->couponId)->update(['status'=>0]);
+                UserCoupon::where('coupon_id',$request->couponId)->where('user_id',$rorder_data['user_id'])->update(['status'=>0]);
 
             }
             $rorder_data['total']=$total-$rorder_data['preferentialtotal'];

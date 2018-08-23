@@ -33,7 +33,7 @@ class UserController extends Controller
 
     public function coupon(Request $request,$id)
     {
-        $user=User::where('id',$id)->first();
+        $user=auth('api')->user();
         $coupons= $user->coupons->where('status',$request->status);
         //dd($coupons->all());
         $data['coupons']=$coupons->all();

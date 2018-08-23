@@ -77,7 +77,7 @@ class OrderController extends Controller
             $grid->id('ID')->sortable();
             $grid->user_id('会员帐号')->display(function($user_id){
                 $user=User::find($user_id);
-                return $user->name;
+                return $user->nickname;
             });
             $grid->pay_id('支付id');
             $grid->column('收件人信息')->display(function(){
